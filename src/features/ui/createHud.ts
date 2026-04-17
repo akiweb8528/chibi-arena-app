@@ -4,7 +4,7 @@ export interface HudElements {
   hpBar: HTMLElement;
   hpLabel: HTMLElement;
   killLabel: HTMLElement;
-  crosshair: HTMLElement;
+  // crosshair: HTMLElement;
   damageOverlay: HTMLElement;
   endOverlay: HTMLElement;
   endTitle: HTMLElement;
@@ -31,7 +31,7 @@ export function resolveHudElements(): HudElements {
     hpBar: byId("hp-bar"),
     hpLabel: byId("hp-label"),
     killLabel: byId("kill-panel"),
-    crosshair: byId("crosshair"),
+    // crosshair: byId("crosshair"),
     damageOverlay: byId("damage-overlay"),
     endOverlay: byId("end-overlay"),
     endTitle: byId("end-title"),
@@ -55,12 +55,12 @@ export function createHud(elements: HudElements): Hud {
       elements.killLabel.textContent = `撃破 ${eliminated} / ${total}`;
     },
     flashHitMarker() {
-      elements.crosshair.classList.add("hit");
-      if (hitTimer !== undefined) window.clearTimeout(hitTimer);
-      hitTimer = window.setTimeout(() => {
-        elements.crosshair.classList.remove("hit");
-        hitTimer = undefined;
-      }, 120);
+      // elements.crosshair.classList.add("hit");
+      // if (hitTimer !== undefined) window.clearTimeout(hitTimer);
+      // hitTimer = window.setTimeout(() => {
+      //   elements.crosshair.classList.remove("hit");
+      //   hitTimer = undefined;
+      // }, 120);
     },
     flashDamage() {
       elements.damageOverlay.classList.add("active");
