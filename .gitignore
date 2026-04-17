@@ -1,0 +1,54 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+dist-ssr/
+build/
+
+# vite / bundler cache
+.vite/
+.cache/
+*.local
+
+# typescript
+*.tsbuildinfo
+
+# test / coverage
+coverage/
+.nyc_output/
+
+# logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# env
+.env
+.env.local
+.env.*.local
+
+# editor / os
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.shared.json
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# deploy / tooling
+.vercel/
+.turbo/
+.netlify/
+
+# agent tooling (local only)
+.claude/settings.local.json
+.codex/settings.local.json

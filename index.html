@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Babylon FPS — Chibi Arena</title>
+
+    <!-- 初期表示のチラつき防止用の最小CSS -->
+    <style>
+      html, body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        background: #0b0b12;
+      }
+      body {
+        overflow: hidden;
+      }
+      #renderCanvas {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        display: block;
+      }
+    </style>
+
+    <!-- 本体CSSは head で先読み -->
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <canvas id="renderCanvas"></canvas>
+
+    <div id="hud" aria-hidden="true">
+      <div id="crosshair"></div>
+      <div id="hp-panel">
+        <div id="hp-label">HP 100 / 100</div>
+        <div id="hp-track"><div id="hp-bar"></div></div>
+      </div>
+      <div id="kill-panel">撃破 0 / 5</div>
+      <div id="damage-overlay"></div>
+    </div>
+
+    <div id="overlay" role="button" tabindex="0">
+      <div class="overlay-card">
+        <h1>Chibi Arena</h1>
+        <p class="lead">クリックして開始</p>
+        <p class="hint">
+          WASD / 矢印: 移動 &middot; マウス: 視点 &middot; 左クリック: 射撃 &middot; ESC: 解除
+        </p>
+      </div>
+    </div>
+
+    <div id="end-overlay" class="hidden">
+      <div class="overlay-card">
+        <h1 id="end-title">VICTORY</h1>
+        <p id="end-hint">R キーでリスタート</p>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
