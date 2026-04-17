@@ -137,7 +137,7 @@ export function createGameApp(opts: GameAppOptions): GameApp {
           playerAgent.tick(dt);
           if (playerAgent.isAlive) {
             player.update(dt);
-            // enemyManager.update(dt, player.getPosition());
+            enemyManager.update(dt, player.getPosition());
           }
           if (!playerAgent.isAlive) {
             finishGame("defeat");
