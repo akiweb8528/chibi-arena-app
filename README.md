@@ -1,6 +1,6 @@
 # Chibi Arena
 
-https://chibi.arena.akiweb8528.net
+https://chibiarena.akiweb8528.net
 
 ブラウザで動作する3D FPSゲームです。
 TypeScript + Babylon.js を用いて開発し、軽量かつ拡張しやすい設計を目指しています。
