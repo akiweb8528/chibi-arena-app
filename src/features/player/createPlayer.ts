@@ -15,6 +15,7 @@ export interface PlayerHandle extends Disposable {
   getPosition(): Vector3;
   update(dt: number): void;
   setActive(active: boolean): void;
+  resetTo(spawn: Vector3, yawRad?: number): void;
 }
 
 const PITCH_LIMIT = Math.PI / 2 - 0.01;
@@ -97,6 +98,14 @@ export function createPlayer(opts: PlayerOptions): PlayerHandle {
     setActive(next) {
       active = next;
       if (!next) pressed.clear();
+    },
+    resetTo(spawn, yawRad) {
+      camera.position.copyFrom(spawn);
+      camera.position.y = eyeHeight;
+      yaw = yawRad ?? 0;
+      pitch = 0;
+      applyRotation();
+      pressed.clear();
     },
     dispose() {
       window.removeEventListener("keydown", onKeyDown);

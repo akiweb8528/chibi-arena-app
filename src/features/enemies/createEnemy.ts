@@ -1,5 +1,6 @@
 import { type AbstractMesh, type Scene, Vector3 } from "@babylonjs/core";
 import {
+  type ChibiAppearance,
   type ChibiPalette,
   createChibiCharacter,
 } from "./createChibiCharacter";
@@ -12,6 +13,8 @@ import type { Disposable } from "@/shared/contracts/Disposable";
 
 export type EnemyPhase = "idle" | "chasing" | "attacking" | "dead";
 
+export type AttackKind = "melee" | "ranged" | "explosive";
+
 export interface EnemySpec {
   readonly maxHp: number;
   readonly moveSpeed: number;
@@ -19,10 +22,20 @@ export interface EnemySpec {
   readonly attackRange: number;
   readonly attackDamage: number;
   readonly attackCooldownMs: number;
+  readonly attackKind: AttackKind;
+  readonly explosionRadius?: number;
+}
+
+export interface EnemyAttackEvent {
+  readonly damage: number;
+  readonly kind: AttackKind;
+  readonly origin: Vector3;
+  readonly target: Vector3;
+  readonly explosionRadius?: number;
 }
 
 export interface EnemyCallbacks {
-  onAttack(damage: number): void;
+  onAttack(event: EnemyAttackEvent): void;
   onKilled(): void;
 }
 
@@ -30,10 +43,12 @@ export interface EnemyOptions {
   scene: Scene;
   id: string;
   palette: ChibiPalette;
+  appearance?: ChibiAppearance;
   position: Vector3;
   facingY: number;
   spec: EnemySpec;
   callbacks: EnemyCallbacks;
+  scale?: number;
 }
 
 export interface EnemyHandle extends Disposable, Damageable {
@@ -45,14 +60,17 @@ export interface EnemyHandle extends Disposable, Damageable {
 }
 
 export function createEnemy(opts: EnemyOptions): EnemyHandle {
-  const { scene, id, palette, position, facingY, spec, callbacks } = opts;
+  const { scene, id, palette, appearance, position, facingY, spec, callbacks } = opts;
 
   const chibi = createChibiCharacter({
     scene,
     name: id,
     palette,
+    appearance,
     position,
     facingY,
+    scale: opts.scale,
+    hasGun: spec.attackKind === "ranged",
   });
 
   let hp = spec.maxHp;
@@ -71,7 +89,18 @@ export function createEnemy(opts: EnemyOptions): EnemyHandle {
       callbacks.onKilled();
       return { kind: "killed", overkill: -hp };
     }
+    chibi.setHpBar(true, hp / spec.maxHp);
     return { kind: "damaged", hp, hpMax: spec.maxHp };
+  };
+
+  const chestOffset = new Vector3(0, 0.9, 0);
+
+  const computeOrigin = (): Vector3 => {
+    if (spec.attackKind === "ranged") {
+      const muzzle = chibi.getMuzzleWorldPosition();
+      if (muzzle) return muzzle;
+    }
+    return chibi.root.position.add(chestOffset);
   };
 
   return {
@@ -105,8 +134,20 @@ export function createEnemy(opts: EnemyOptions): EnemyHandle {
       if (dist < spec.attackRange) {
         phase = "attacking";
         if (attackCooldownSecs === 0) {
-          callbacks.onAttack(spec.attackDamage);
+          const origin = computeOrigin();
+          callbacks.onAttack({
+            damage: spec.attackDamage,
+            kind: spec.attackKind,
+            origin,
+            target: playerPos.clone(),
+            explosionRadius: spec.explosionRadius,
+          });
           attackCooldownSecs = spec.attackCooldownMs / 1000;
+          if (spec.attackKind === "explosive") {
+            phase = "dead";
+            chibi.setVisible(false);
+            callbacks.onKilled();
+          }
         }
         return;
       }

@@ -1,17 +1,30 @@
 import { type Ray, type Scene, Vector3 } from "@babylonjs/core";
 import type { DamageResult } from "@/shared/contracts/damage";
 import type { Disposable } from "@/shared/contracts/Disposable";
-import { DEFAULT_PALETTES } from "./createChibiCharacter";
-import { createEnemy, type EnemyHandle, type EnemySpec } from "./createEnemy";
+import {
+  type ChibiAppearance,
+  type ChibiPalette,
+  DEFAULT_PALETTES,
+} from "./createChibiCharacter";
+import {
+  createEnemy,
+  type EnemyAttackEvent,
+  type EnemyHandle,
+  type EnemySpec,
+} from "./createEnemy";
 
 export interface EnemyManagerEvents {
   onEnemyKilled(remainingAlive: number): void;
-  onPlayerAttacked(damage: number): void;
+  onEnemyAttack(event: EnemyAttackEvent): void;
 }
 
 export interface EnemySpawn {
   readonly position: Vector3;
   readonly facingY: number;
+  readonly spec?: EnemySpec;
+  readonly palette?: ChibiPalette;
+  readonly appearance?: ChibiAppearance;
+  readonly scale?: number;
 }
 
 export interface EnemyManager extends Disposable {
@@ -31,13 +44,14 @@ const DEFAULT_SPEC: EnemySpec = {
   attackRange: 1.35,
   attackDamage: 12,
   attackCooldownMs: 900,
+  attackKind: "melee",
 };
 
 export function createEnemyManager(
   scene: Scene,
   spawns: readonly EnemySpawn[],
   events: EnemyManagerEvents,
-  spec: EnemySpec = DEFAULT_SPEC,
+  defaultSpec: EnemySpec = DEFAULT_SPEC,
 ): EnemyManager {
   const enemies: EnemyHandle[] = [];
   const meshIdToEnemy = new Map<number, EnemyHandle>();
@@ -45,16 +59,20 @@ export function createEnemyManager(
 
   spawns.forEach((spawn, i) => {
     const id = `chibi-${i}`;
+    const palette =
+      spawn.palette ?? DEFAULT_PALETTES[i % DEFAULT_PALETTES.length]!;
     const enemy = createEnemy({
       scene,
       id,
-      palette: DEFAULT_PALETTES[i % DEFAULT_PALETTES.length]!,
+      palette,
+      appearance: spawn.appearance,
       position: spawn.position,
       facingY: spawn.facingY,
-      spec,
+      spec: spawn.spec ?? defaultSpec,
+      scale: spawn.scale,
       callbacks: {
-        onAttack(damage) {
-          events.onPlayerAttacked(damage);
+        onAttack(event) {
+          events.onEnemyAttack(event);
         },
         onKilled() {
           aliveCount -= 1;

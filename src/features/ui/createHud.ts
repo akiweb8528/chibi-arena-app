@@ -4,19 +4,26 @@ export interface HudElements {
   hpBar: HTMLElement;
   hpLabel: HTMLElement;
   killLabel: HTMLElement;
+  stageLabel: HTMLElement;
   crosshair: HTMLElement;
   damageOverlay: HTMLElement;
   endOverlay: HTMLElement;
   endTitle: HTMLElement;
+  endSubtitle: HTMLElement;
   endHint: HTMLElement;
 }
+
+export type EndVariant = "win" | "lose";
 
 export interface Hud extends Disposable {
   setHp(current: number, max: number): void;
   setKillProgress(eliminated: number, total: number): void;
+  setStage(current: number, total: number, name: string): void;
   flashHitMarker(): void;
   flashDamage(): void;
-  showEnd(kind: "victory" | "defeat", restartHint: string): void;
+  showEnd(variant: EndVariant, title: string, subtitle: string, hint: string): void;
+  hideEnd(): void;
+  onEndClick(cb: (() => void) | null): void;
 }
 
 export function resolveHudElements(): HudElements {
@@ -31,10 +38,12 @@ export function resolveHudElements(): HudElements {
     hpBar: byId("hp-bar"),
     hpLabel: byId("hp-label"),
     killLabel: byId("kill-panel"),
+    stageLabel: byId("stage-panel"),
     crosshair: byId("crosshair"),
     damageOverlay: byId("damage-overlay"),
     endOverlay: byId("end-overlay"),
     endTitle: byId("end-title"),
+    endSubtitle: byId("end-subtitle"),
     endHint: byId("end-hint"),
   };
 }
@@ -42,6 +51,12 @@ export function resolveHudElements(): HudElements {
 export function createHud(elements: HudElements): Hud {
   let hitTimer: number | undefined;
   let damageTimer: number | undefined;
+  let endClickCb: (() => void) | null = null;
+
+  const handleEndClick = () => {
+    endClickCb?.();
+  };
+  elements.endOverlay.addEventListener("click", handleEndClick);
 
   return {
     setHp(current, max) {
@@ -53,6 +68,9 @@ export function createHud(elements: HudElements): Hud {
     },
     setKillProgress(eliminated, total) {
       elements.killLabel.textContent = `撃破 ${eliminated} / ${total}`;
+    },
+    setStage(current, total, name) {
+      elements.stageLabel.textContent = `STAGE ${current} / ${total} — ${name}`;
     },
     flashHitMarker() {
       elements.crosshair.classList.add("hit");
@@ -70,20 +88,24 @@ export function createHud(elements: HudElements): Hud {
         damageTimer = undefined;
       }, 240);
     },
-    showEnd(kind, restartHint) {
+    showEnd(variant, title, subtitle, hint) {
       elements.endOverlay.classList.remove("hidden");
-      if (kind === "victory") {
-        elements.endTitle.textContent = "VICTORY";
-        elements.endTitle.dataset["variant"] = "win";
-      } else {
-        elements.endTitle.textContent = "DEFEAT";
-        elements.endTitle.dataset["variant"] = "lose";
-      }
-      elements.endHint.textContent = restartHint;
+      elements.endTitle.textContent = title;
+      elements.endTitle.dataset["variant"] = variant;
+      elements.endSubtitle.textContent = subtitle;
+      elements.endHint.textContent = hint;
+    },
+    hideEnd() {
+      elements.endOverlay.classList.add("hidden");
+    },
+    onEndClick(cb) {
+      endClickCb = cb;
     },
     dispose() {
+      elements.endOverlay.removeEventListener("click", handleEndClick);
       if (hitTimer !== undefined) window.clearTimeout(hitTimer);
       if (damageTimer !== undefined) window.clearTimeout(damageTimer);
+      endClickCb = null;
     },
   };
 }
