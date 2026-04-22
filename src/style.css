@@ -12,10 +12,15 @@ body {
   padding: 0;
   width: 100%;
   height: 100%;
+  min-height: 100dvh;
   background: #0b0b12;
   color: #f3f3f7;
   font-family: "Hiragino Sans", "Yu Gothic", system-ui, -apple-system, sans-serif;
   overflow: hidden;
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 #renderCanvas {
@@ -23,6 +28,7 @@ body {
   inset: 0;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   display: block;
   touch-action: none;
   outline: none;
@@ -137,6 +143,62 @@ body {
   transition: none;
 }
 
+#mobile-controls {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  display: none;
+  pointer-events: none;
+}
+
+#move-pad {
+  position: absolute;
+  left: calc(env(safe-area-inset-left) + 20px);
+  bottom: calc(env(safe-area-inset-bottom) + 22px);
+  width: clamp(112px, 26vw, 148px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: rgba(12, 16, 24, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  box-shadow: inset 0 0 18px rgba(255, 255, 255, 0.08);
+  pointer-events: auto;
+  touch-action: none;
+}
+
+#move-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 38%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28);
+  transform: translate(-50%, -50%);
+}
+
+#fire-button {
+  position: absolute;
+  right: calc(env(safe-area-inset-right) + 22px);
+  bottom: calc(env(safe-area-inset-bottom) + 30px);
+  width: clamp(76px, 18vw, 96px);
+  aspect-ratio: 1;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 50%;
+  background: rgba(255, 84, 104, 0.78);
+  color: #fff;
+  font: 700 0.86rem/1 system-ui, -apple-system, sans-serif;
+  letter-spacing: 0.08em;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
+  pointer-events: auto;
+  touch-action: none;
+}
+
+#fire-button:active {
+  transform: scale(0.94);
+  background: rgba(255, 116, 132, 0.9);
+}
+
 #overlay {
   position: fixed;
   inset: 0;
@@ -217,10 +279,69 @@ body {
   opacity: 0.72;
 }
 
+.touch-hint {
+  display: none;
+}
+
 #end-title[data-variant="win"] {
   color: #9bffb9;
 }
 
 #end-title[data-variant="lose"] {
   color: #ff8899;
+}
+
+@media (pointer: coarse) {
+  body.touch-controls-active #mobile-controls {
+    display: block;
+  }
+
+  #hp-panel {
+    top: calc(env(safe-area-inset-top) + 50px);
+    bottom: auto;
+    left: 14px;
+    width: min(42vw, 176px);
+  }
+
+  #hp-label {
+    font-size: 0.7rem;
+  }
+
+  #kill-panel {
+    top: calc(env(safe-area-inset-top) + 50px);
+    right: 14px;
+    bottom: auto;
+    padding: 7px 10px;
+    font-size: 0.75rem;
+  }
+
+  #stage-panel {
+    top: calc(env(safe-area-inset-top) + 10px);
+    max-width: calc(100vw - 24px);
+    padding: 7px 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.72rem;
+  }
+
+  .overlay-card {
+    width: min(86vw, 360px);
+    padding: 1.25rem 1.1rem;
+  }
+
+  .overlay-card h1 {
+    font-size: 1.55rem;
+  }
+
+  .overlay-card .lead {
+    font-size: 1rem;
+  }
+
+  .desktop-hint {
+    display: none;
+  }
+
+  .touch-hint {
+    display: block;
+  }
 }

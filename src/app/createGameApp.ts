@@ -28,14 +28,45 @@ export interface GameApp extends Disposable {
   start(): void;
 }
 
+interface MobileControlElements {
+  movePad: HTMLElement;
+  moveKnob: HTMLElement;
+  fireButton: HTMLButtonElement;
+}
+
 type PhaseTag =
   | { kind: "playing" }
   | { kind: "stageCleared"; nextIndex: number }
   | { kind: "gameCleared" }
   | { kind: "defeated"; stageIndex: number };
 
+function resolveMobileControlElements(): MobileControlElements | null {
+  const movePad = document.getElementById("move-pad");
+  const moveKnob = document.getElementById("move-knob");
+  const fireButton = document.getElementById("fire-button");
+
+  if (
+    !(movePad instanceof HTMLElement) ||
+    !(moveKnob instanceof HTMLElement) ||
+    !(fireButton instanceof HTMLButtonElement)
+  ) {
+    return null;
+  }
+
+  return { movePad, moveKnob, fireButton };
+}
+
 export function createGameApp(opts: GameAppOptions): GameApp {
   const { canvas, overlay } = opts;
+  const prefersTouchControls =
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(pointer: coarse)").matches;
+  const shouldUsePointerLock =
+    !prefersTouchControls && typeof canvas.requestPointerLock === "function";
+  const mobileControls = resolveMobileControlElements();
+  const setTouchControlsActive = (active: boolean): void => {
+    document.body.classList.toggle("touch-controls-active", active);
+  };
 
   const engineHandle = createEngine(canvas);
   const sceneHandle = createScene(engineHandle.engine);
@@ -45,6 +76,9 @@ export function createGameApp(opts: GameAppOptions): GameApp {
     scene: sceneHandle.scene,
     canvas,
     spawn: firstStage.playerSpawn,
+    touchMoveControls: mobileControls
+      ? { pad: mobileControls.movePad, knob: mobileControls.moveKnob }
+      : undefined,
   });
   const playerAgent = createPlayerAgent({ maxHp: 100, invulnerableMs: 350 });
 
@@ -128,6 +162,7 @@ export function createGameApp(opts: GameAppOptions): GameApp {
       player,
       enemies: mgr,
       weapon,
+      fireButton: mobileControls?.fireButton,
       isFiringAllowed: () =>
         phase.kind === "playing" &&
         playerAgent.isAlive &&
@@ -150,17 +185,34 @@ export function createGameApp(opts: GameAppOptions): GameApp {
   };
 
   const releasePointerLock = () => {
-    if (document.exitPointerLock) document.exitPointerLock();
+    if (document.pointerLockElement === canvas && document.exitPointerLock) {
+      document.exitPointerLock();
+    }
   };
 
   const engagePointerLock = () => {
     overlay.classList.add("hidden");
-    if (canvas.requestPointerLock) canvas.requestPointerLock();
+    setTouchControlsActive(true);
+    if (!shouldUsePointerLock) return;
+
+    const requestPointerLock = canvas.requestPointerLock as () =>
+      | void
+      | Promise<void>;
+    const lockResult = requestPointerLock.call(canvas);
+    if (lockResult && typeof lockResult.catch === "function") {
+      lockResult.catch(() => {
+        if (phase.kind === "playing") {
+          overlay.classList.remove("hidden");
+          setTouchControlsActive(false);
+        }
+      });
+    }
   };
 
   const onStageClear = () => {
     if (phase.kind !== "playing") return;
     player.setActive(false);
+    setTouchControlsActive(false);
     releasePointerLock();
     const nextIndex = stageIndex + 1;
     const current = STAGES[stageIndex]!;
@@ -170,8 +222,9 @@ export function createGameApp(opts: GameAppOptions): GameApp {
         "win",
         "GAME CLEAR",
         `全${STAGES.length}ステージ制覇 — ${current.name} を突破`,
-        "R で最初のステージへ",
+        "タップ / R で最初のステージへ",
       );
+      hud.onEndClick(() => restartFromBeginning());
       return;
     }
     const next = STAGES[nextIndex]!;
@@ -183,7 +236,7 @@ export function createGameApp(opts: GameAppOptions): GameApp {
       "win",
       `STAGE ${current.number} CLEAR`,
       subtitle,
-      "クリック / Space で次のステージへ",
+      "タップ / クリック / Space で次へ",
     );
     hud.onEndClick(() => advanceToNextStage());
   };
@@ -191,6 +244,7 @@ export function createGameApp(opts: GameAppOptions): GameApp {
   const onDefeat = () => {
     if (phase.kind !== "playing") return;
     player.setActive(false);
+    setTouchControlsActive(false);
     releasePointerLock();
     phase = { kind: "defeated", stageIndex };
     const current = STAGES[stageIndex]!;
@@ -198,8 +252,9 @@ export function createGameApp(opts: GameAppOptions): GameApp {
       "lose",
       "DEFEAT",
       `Stage ${current.number} — ${current.name}`,
-      "R でリトライ",
+      "タップ / R でリトライ",
     );
+    hud.onEndClick(() => retryCurrentStage());
   };
 
   const advanceToNextStage = () => {
@@ -225,9 +280,14 @@ export function createGameApp(opts: GameAppOptions): GameApp {
     engagePointerLock();
   };
 
-  const requestLock = () => {
+  const requestLock = (e?: Event) => {
+    e?.preventDefault();
     if (phase.kind !== "playing") return;
     engagePointerLock();
+  };
+  const onOverlayPointerUp = (e: PointerEvent) => {
+    if (e.button !== 0) return;
+    requestLock(e);
   };
   const onOverlayKey = (e: KeyboardEvent) => {
     if (e.key === "Enter" || e.key === " ") {
@@ -236,8 +296,18 @@ export function createGameApp(opts: GameAppOptions): GameApp {
     }
   };
   const onPointerLockChange = () => {
+    if (!shouldUsePointerLock) return;
     if (document.pointerLockElement !== canvas) {
-      if (phase.kind === "playing") overlay.classList.remove("hidden");
+      if (phase.kind === "playing") {
+        overlay.classList.remove("hidden");
+        setTouchControlsActive(false);
+      }
+    }
+  };
+  const onPointerLockError = () => {
+    if (shouldUsePointerLock && phase.kind === "playing") {
+      overlay.classList.remove("hidden");
+      setTouchControlsActive(false);
     }
   };
   const onWindowKeyDown = (e: KeyboardEvent) => {
@@ -257,9 +327,10 @@ export function createGameApp(opts: GameAppOptions): GameApp {
     }
   };
 
-  overlay.addEventListener("click", requestLock);
+  overlay.addEventListener("pointerup", onOverlayPointerUp);
   overlay.addEventListener("keydown", onOverlayKey);
   document.addEventListener("pointerlockchange", onPointerLockChange);
+  document.addEventListener("pointerlockerror", onPointerLockError);
   window.addEventListener("keydown", onWindowKeyDown);
 
   loadStage(0);
@@ -303,10 +374,12 @@ export function createGameApp(opts: GameAppOptions): GameApp {
       });
     },
     dispose() {
-      overlay.removeEventListener("click", requestLock);
+      overlay.removeEventListener("pointerup", onOverlayPointerUp);
       overlay.removeEventListener("keydown", onOverlayKey);
       document.removeEventListener("pointerlockchange", onPointerLockChange);
+      document.removeEventListener("pointerlockerror", onPointerLockError);
       window.removeEventListener("keydown", onWindowKeyDown);
+      setTouchControlsActive(false);
       hud.onEndClick(null);
       combat?.dispose();
       enemyManager?.dispose();
