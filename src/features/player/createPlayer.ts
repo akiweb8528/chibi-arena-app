@@ -24,6 +24,7 @@ export interface PlayerHandle extends Disposable {
 }
 
 const PITCH_LIMIT = Math.PI / 2 - 0.01;
+const TOUCH_LOOK_DRAG_THRESHOLD_PX = 6;
 
 export function createPlayer(opts: PlayerOptions): PlayerHandle {
   const { scene, canvas, spawn } = opts;
@@ -45,6 +46,9 @@ export function createPlayer(opts: PlayerOptions): PlayerHandle {
   let active = true;
   let movePointerId: number | null = null;
   let lookPointerId: number | null = null;
+  let lookDragStarted = false;
+  let lookStartX = 0;
+  let lookStartY = 0;
   let lastLookX = 0;
   let lastLookY = 0;
 
@@ -74,9 +78,12 @@ export function createPlayer(opts: PlayerOptions): PlayerHandle {
   };
   const onBlur = () => {
     pressed.clear();
+    if (movePointerId !== null) releaseMovePointer(movePointerId);
+    if (lookPointerId !== null) releaseLookPointer(lookPointerId);
     resetTouchMove();
     movePointerId = null;
     lookPointerId = null;
+    lookDragStarted = false;
   };
 
   const onMouseMove = (e: MouseEvent) => {
@@ -135,6 +142,12 @@ export function createPlayer(opts: PlayerOptions): PlayerHandle {
     }
   };
 
+  const releaseLookPointer = (pointerId: number): void => {
+    if (canvas.hasPointerCapture(pointerId)) {
+      canvas.releasePointerCapture(pointerId);
+    }
+  };
+
   const onMovePointerDown = (e: PointerEvent): void => {
     if (!active || movePointerId !== null) return;
     movePointerId = e.pointerId;
@@ -159,10 +172,11 @@ export function createPlayer(opts: PlayerOptions): PlayerHandle {
 
   const onTouchLookPointerDown = (e: PointerEvent): void => {
     if (!active || e.pointerType === "mouse" || lookPointerId !== null) return;
-    const rect = canvas.getBoundingClientRect();
-    if (e.clientX < rect.left + rect.width * 0.42) return;
 
     lookPointerId = e.pointerId;
+    lookDragStarted = false;
+    lookStartX = e.clientX;
+    lookStartY = e.clientY;
     lastLookX = e.clientX;
     lastLookY = e.clientY;
     canvas.setPointerCapture(e.pointerId);
@@ -171,6 +185,23 @@ export function createPlayer(opts: PlayerOptions): PlayerHandle {
 
   const onTouchLookPointerMove = (e: PointerEvent): void => {
     if (e.pointerId !== lookPointerId) return;
+    if (!lookDragStarted) {
+      const distance = Math.hypot(
+        e.clientX - lookStartX,
+        e.clientY - lookStartY,
+      );
+      if (distance < TOUCH_LOOK_DRAG_THRESHOLD_PX) {
+        e.preventDefault();
+        return;
+      }
+
+      lookDragStarted = true;
+      lastLookX = e.clientX;
+      lastLookY = e.clientY;
+      e.preventDefault();
+      return;
+    }
+
     const dx = e.clientX - lastLookX;
     const dy = e.clientY - lastLookY;
     lastLookX = e.clientX;
@@ -181,10 +212,9 @@ export function createPlayer(opts: PlayerOptions): PlayerHandle {
 
   const onTouchLookPointerEnd = (e: PointerEvent): void => {
     if (e.pointerId !== lookPointerId) return;
-    if (canvas.hasPointerCapture(e.pointerId)) {
-      canvas.releasePointerCapture(e.pointerId);
-    }
+    releaseLookPointer(e.pointerId);
     lookPointerId = null;
+    lookDragStarted = false;
     e.preventDefault();
   };
 
@@ -235,9 +265,12 @@ export function createPlayer(opts: PlayerOptions): PlayerHandle {
       active = next;
       if (!next) {
         pressed.clear();
+        if (movePointerId !== null) releaseMovePointer(movePointerId);
+        if (lookPointerId !== null) releaseLookPointer(lookPointerId);
         resetTouchMove();
         movePointerId = null;
         lookPointerId = null;
+        lookDragStarted = false;
       }
     },
     resetTo(spawn, yawRad) {
