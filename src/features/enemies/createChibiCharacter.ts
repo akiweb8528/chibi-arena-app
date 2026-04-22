@@ -2,12 +2,13 @@ import {
   type AbstractMesh,
   Animation,
   Color3,
-  type Mesh,
-  MeshBuilder,
+  DynamicTexture,
+  Mesh,
   type Scene,
   StandardMaterial,
   TransformNode,
   Vector3,
+  MeshBuilder,
 } from "@babylonjs/core";
 import type { Disposable } from "@/shared/contracts/Disposable";
 
@@ -26,6 +27,8 @@ export interface ChibiOptions {
   position?: Vector3;
   facingY?: number;
   bobSpeed?: number;
+  scale?: number;
+  hasGun?: boolean;
 }
 
 export interface ChibiHandle extends Disposable {
@@ -33,6 +36,8 @@ export interface ChibiHandle extends Disposable {
   readonly pickMeshes: readonly AbstractMesh[];
   setVisible(visible: boolean): void;
   flashDamage(durationMs: number): void;
+  setHpBar(visible: boolean, pct: number): void;
+  getMuzzleWorldPosition(): Vector3 | null;
 }
 
 export const DEFAULT_PALETTES: readonly ChibiPalette[] = [
@@ -67,6 +72,8 @@ export const DEFAULT_PALETTES: readonly ChibiPalette[] = [
 ];
 
 const FLASH_TINT = new Color3(0.95, 0.35, 0.35);
+const HPBAR_TEX_W = 96;
+const HPBAR_TEX_H = 16;
 
 export function createChibiCharacter(opts: ChibiOptions): ChibiHandle {
   const { scene, name, palette } = opts;
@@ -74,6 +81,9 @@ export function createChibiCharacter(opts: ChibiOptions): ChibiHandle {
   const root = new TransformNode(`${name}:root`, scene);
   if (opts.position) root.position.copyFrom(opts.position);
   root.rotation.y = opts.facingY ?? 0;
+  if (opts.scale !== undefined && opts.scale !== 1) {
+    root.scaling.setAll(opts.scale);
+  }
 
   const skinMat = flatMat(scene, `${name}:skin`, palette.skin);
   const hairMat = flatMat(scene, `${name}:hair`, palette.hair);
@@ -83,10 +93,15 @@ export function createChibiCharacter(opts: ChibiOptions): ChibiHandle {
   const darkMat = flatMat(scene, `${name}:dark`, new Color3(0.08, 0.08, 0.14));
   const blushMat = flatMat(scene, `${name}:blush`, palette.accent);
 
-  const ownedMaterials = [skinMat, hairMat, topMat, botMat, whiteMat, darkMat, blushMat];
-  const originalEmissives = new Map<StandardMaterial, Color3>(
-    ownedMaterials.map((m) => [m, m.emissiveColor.clone()]),
-  );
+  const ownedMaterials: StandardMaterial[] = [
+    skinMat,
+    hairMat,
+    topMat,
+    botMat,
+    whiteMat,
+    darkMat,
+    blushMat,
+  ];
 
   const parentTo = (m: Mesh, mat: StandardMaterial): Mesh => {
     m.material = mat;
@@ -214,7 +229,95 @@ export function createChibiCharacter(opts: ChibiOptions): ChibiHandle {
   mouth.scaling.set(1.1, 0.4, 0.3);
   mouth.position.set(0, eyeY - 0.3, eyeZ + 0.02);
 
-  const pickMeshes: readonly AbstractMesh[] = root.getChildMeshes();
+  let muzzleNode: TransformNode | null = null;
+  if (opts.hasGun) {
+    const gunBodyMat = flatMat(
+      scene,
+      `${name}:gunBody`,
+      Color3.FromHexString("#1a1a1f"),
+    );
+    const gunBarrelMat = flatMat(
+      scene,
+      `${name}:gunBarrel`,
+      Color3.FromHexString("#3f4048"),
+    );
+    ownedMaterials.push(gunBodyMat, gunBarrelMat);
+
+    const gunRoot = new TransformNode(`${name}:gunRoot`, scene);
+    gunRoot.parent = root;
+    gunRoot.position.set(0.4, 0.62, 0.36);
+
+    const gunBody = MeshBuilder.CreateBox(
+      `${name}:gunBodyMesh`,
+      { width: 0.12, height: 0.1, depth: 0.26 },
+      scene,
+    );
+    gunBody.material = gunBodyMat;
+    gunBody.parent = gunRoot;
+
+    const gunBarrel = MeshBuilder.CreateCylinder(
+      `${name}:gunBarrelMesh`,
+      { diameter: 0.055, height: 0.28, tessellation: 10 },
+      scene,
+    );
+    gunBarrel.material = gunBarrelMat;
+    gunBarrel.parent = gunRoot;
+    gunBarrel.rotation.x = Math.PI / 2;
+    gunBarrel.position.set(0, 0, 0.2);
+
+    muzzleNode = new TransformNode(`${name}:muzzle`, scene);
+    muzzleNode.parent = gunRoot;
+    muzzleNode.position.set(0, 0, 0.36);
+  }
+
+  const hpBarTex = new DynamicTexture(
+    `${name}:hpBarTex`,
+    { width: HPBAR_TEX_W, height: HPBAR_TEX_H },
+    scene,
+    false,
+  );
+  const hpBarMat = new StandardMaterial(`${name}:hpBarMat`, scene);
+  hpBarMat.diffuseTexture = hpBarTex;
+  hpBarMat.emissiveTexture = hpBarTex;
+  hpBarMat.specularColor = new Color3(0, 0, 0);
+  hpBarMat.disableLighting = true;
+  hpBarMat.backFaceCulling = false;
+  const hpBarPlane = MeshBuilder.CreatePlane(
+    `${name}:hpBarPlane`,
+    { width: 0.9, height: 0.14 },
+    scene,
+  );
+  hpBarPlane.material = hpBarMat;
+  hpBarPlane.parent = root;
+  hpBarPlane.position.set(0, 2.42, 0);
+  hpBarPlane.billboardMode = Mesh.BILLBOARDMODE_ALL;
+  hpBarPlane.isPickable = false;
+  hpBarPlane.setEnabled(false);
+
+  const drawHpBar = (pct: number) => {
+    const ctx = hpBarTex.getContext() as unknown as CanvasRenderingContext2D;
+    const W = HPBAR_TEX_W;
+    const H = HPBAR_TEX_H;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = "rgba(10, 10, 15, 0.92)";
+    ctx.fillRect(0, 0, W, H);
+    const clamped = Math.max(0, Math.min(1, pct));
+    const hue = Math.round(120 * clamped);
+    ctx.fillStyle = `hsl(${hue}, 72%, 52%)`;
+    ctx.fillRect(2, 2, (W - 4) * clamped, H - 4);
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.38)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(0.5, 0.5, W - 1, H - 1);
+    hpBarTex.update();
+  };
+
+  const originalEmissives = new Map<StandardMaterial, Color3>(
+    ownedMaterials.map((m) => [m, m.emissiveColor.clone()]),
+  );
+
+  const pickMeshes: readonly AbstractMesh[] = root
+    .getChildMeshes()
+    .filter((m) => m !== hpBarPlane);
 
   const bob = buildIdleBob(scene, root, opts.bobSpeed ?? 0.8 + Math.random() * 0.5);
 
@@ -238,11 +341,21 @@ export function createChibiCharacter(opts: ChibiOptions): ChibiHandle {
         flashTimer = undefined;
       }, durationMs);
     },
+    setHpBar(visible, pct) {
+      hpBarPlane.setEnabled(visible);
+      if (visible) drawHpBar(pct);
+    },
+    getMuzzleWorldPosition() {
+      if (!muzzleNode) return null;
+      return muzzleNode.getAbsolutePosition().clone();
+    },
     dispose() {
       bob.stop();
       if (flashTimer !== undefined) window.clearTimeout(flashTimer);
       root.dispose(false, false);
       for (const m of ownedMaterials) m.dispose();
+      hpBarMat.dispose();
+      hpBarTex.dispose();
     },
   };
 }

@@ -15,6 +15,7 @@ export interface PlayerAgent extends Damageable {
   readonly isAlive: boolean;
   tick(dt: number): void;
   takeDamage(amount: number): DamageResult;
+  reset(): void;
 }
 
 export function createPlayerAgent(spec: PlayerAgentSpec): PlayerAgent {
@@ -49,5 +50,9 @@ export function createPlayerAgent(spec: PlayerAgentSpec): PlayerAgent {
     },
     takeDamage,
     applyHit,
+    reset() {
+      hp = spec.maxHp;
+      invulnerableSecs = 0;
+    },
   };
 }

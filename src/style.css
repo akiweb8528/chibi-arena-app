@@ -101,6 +101,23 @@ body {
   pointer-events: none;
 }
 
+#stage-panel {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 18px;
+  background: rgba(18, 18, 28, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
 #damage-overlay {
   position: fixed;
   inset: 0;
@@ -149,9 +166,24 @@ body {
   align-items: center;
   justify-content: center;
   background: rgba(6, 6, 12, 0.74);
+  cursor: pointer;
+  outline: none;
 }
 
 #end-overlay.hidden {
+  display: none;
+}
+
+#end-subtitle {
+  margin: 0.4em 0 0.8em;
+  font-size: 0.95rem;
+  color: #f0e6f0;
+  opacity: 0.88;
+  max-width: 34ch;
+  line-height: 1.5;
+}
+
+#end-subtitle:empty {
   display: none;
 }
 
