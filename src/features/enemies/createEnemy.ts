@@ -1,5 +1,6 @@
 import { type AbstractMesh, type Scene, Vector3 } from "@babylonjs/core";
 import {
+  type ChibiAppearance,
   type ChibiPalette,
   createChibiCharacter,
 } from "./createChibiCharacter";
@@ -42,6 +43,7 @@ export interface EnemyOptions {
   scene: Scene;
   id: string;
   palette: ChibiPalette;
+  appearance?: ChibiAppearance;
   position: Vector3;
   facingY: number;
   spec: EnemySpec;
@@ -58,12 +60,13 @@ export interface EnemyHandle extends Disposable, Damageable {
 }
 
 export function createEnemy(opts: EnemyOptions): EnemyHandle {
-  const { scene, id, palette, position, facingY, spec, callbacks } = opts;
+  const { scene, id, palette, appearance, position, facingY, spec, callbacks } = opts;
 
   const chibi = createChibiCharacter({
     scene,
     name: id,
     palette,
+    appearance,
     position,
     facingY,
     scale: opts.scale,

@@ -63,13 +63,16 @@ export function createGameApp(opts: GameAppOptions): GameApp {
     phase.kind !== "playing" || !overlay.classList.contains("hidden");
 
   const buildSpawnsFor = (stage: StageDef): EnemySpawn[] =>
-    stage.spawns.map((sp) => {
+    stage.spawns.map((sp, i) => {
       const arche = ARCHETYPES[sp.archetype];
+      const appearance =
+        arche.appearances[(stage.number + i) % arche.appearances.length];
       return {
         position: sp.position,
         facingY: sp.facingY,
         spec: arche.spec,
         palette: arche.palette,
+        appearance,
         scale: arche.scale,
       };
     });

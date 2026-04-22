@@ -1,5 +1,8 @@
 import { Color3 } from "@babylonjs/core";
-import type { ChibiPalette } from "@/features/enemies/createChibiCharacter";
+import type {
+  ChibiAppearance,
+  ChibiPalette,
+} from "@/features/enemies/createChibiCharacter";
 import type { EnemySpec } from "@/features/enemies/createEnemy";
 
 export type ArchetypeId =
@@ -20,6 +23,7 @@ export interface EnemyArchetype {
   readonly label: string;
   readonly spec: EnemySpec;
   readonly palette: ChibiPalette;
+  readonly appearances: readonly ChibiAppearance[];
   readonly scale: number;
 }
 
@@ -62,6 +66,11 @@ export const ARCHETYPES: Readonly<Record<ArchetypeId, EnemyArchetype>> = {
       clothesBottom: "#4466aa",
       accent: "#ffcf4d",
     }),
+    appearances: [
+      { hairStyle: "round", outfitStyle: "plain", faceStyle: "soft" },
+      { hairStyle: "bob", outfitStyle: "plain", faceStyle: "soft", accessory: "headband" },
+      { hairStyle: "sideSweep", outfitStyle: "scout", faceStyle: "soft" },
+    ],
   },
   runner: {
     id: "runner",
@@ -83,6 +92,10 @@ export const ARCHETYPES: Readonly<Record<ArchetypeId, EnemyArchetype>> = {
       clothesBottom: "#5c1f10",
       accent: "#fff4a0",
     }),
+    appearances: [
+      { hairStyle: "spiky", outfitStyle: "scout", faceStyle: "focused", accessory: "headband" },
+      { hairStyle: "sideSweep", outfitStyle: "scout", faceStyle: "focused", accessory: "goggles" },
+    ],
   },
   sniper: {
     id: "sniper",
@@ -104,6 +117,10 @@ export const ARCHETYPES: Readonly<Record<ArchetypeId, EnemyArchetype>> = {
       clothesBottom: "#211634",
       accent: "#ff4fa8",
     }),
+    appearances: [
+      { hairStyle: "hood", outfitStyle: "coat", faceStyle: "visor" },
+      { hairStyle: "sideSweep", outfitStyle: "coat", faceStyle: "focused", accessory: "goggles" },
+    ],
   },
   tank: {
     id: "tank",
@@ -125,6 +142,10 @@ export const ARCHETYPES: Readonly<Record<ArchetypeId, EnemyArchetype>> = {
       clothesBottom: "#2f333c",
       accent: "#9da6b4",
     }),
+    appearances: [
+      { hairStyle: "helmet", outfitStyle: "heavyArmor", faceStyle: "focused" },
+      { hairStyle: "helmet", outfitStyle: "armor", faceStyle: "visor" },
+    ],
   },
   bruiser: {
     id: "bruiser",
@@ -146,6 +167,10 @@ export const ARCHETYPES: Readonly<Record<ArchetypeId, EnemyArchetype>> = {
       clothesBottom: "#2a0808",
       accent: "#ffc04a",
     }),
+    appearances: [
+      { hairStyle: "spiky", outfitStyle: "armor", faceStyle: "focused", accessory: "horns" },
+      { hairStyle: "helmet", outfitStyle: "armor", faceStyle: "focused" },
+    ],
   },
   rapid: {
     id: "rapid",
@@ -167,6 +192,10 @@ export const ARCHETYPES: Readonly<Record<ArchetypeId, EnemyArchetype>> = {
       clothesBottom: "#6a5418",
       accent: "#ff8a8a",
     }),
+    appearances: [
+      { hairStyle: "bob", outfitStyle: "scout", faceStyle: "soft", accessory: "headband" },
+      { hairStyle: "sideSweep", outfitStyle: "scout", faceStyle: "focused", accessory: "goggles" },
+    ],
   },
   sprinter: {
     id: "sprinter",
@@ -188,6 +217,10 @@ export const ARCHETYPES: Readonly<Record<ArchetypeId, EnemyArchetype>> = {
       clothesBottom: "#0e5070",
       accent: "#e0ff63",
     }),
+    appearances: [
+      { hairStyle: "spiky", outfitStyle: "scout", faceStyle: "visor", accessory: "headband" },
+      { hairStyle: "sideSweep", outfitStyle: "coat", faceStyle: "focused", accessory: "goggles" },
+    ],
   },
   elite: {
     id: "elite",
@@ -209,6 +242,10 @@ export const ARCHETYPES: Readonly<Record<ArchetypeId, EnemyArchetype>> = {
       clothesBottom: "#3a2a00",
       accent: "#ffffff",
     }),
+    appearances: [
+      { hairStyle: "bob", outfitStyle: "royal", faceStyle: "focused", accessory: "headband" },
+      { hairStyle: "helmet", outfitStyle: "royal", faceStyle: "visor" },
+    ],
   },
   assassin: {
     id: "assassin",
@@ -230,6 +267,10 @@ export const ARCHETYPES: Readonly<Record<ArchetypeId, EnemyArchetype>> = {
       clothesBottom: "#050508",
       accent: "#ff2a6d",
     }),
+    appearances: [
+      { hairStyle: "hood", outfitStyle: "coat", faceStyle: "masked" },
+      { hairStyle: "sideSweep", outfitStyle: "coat", faceStyle: "masked", accessory: "horns" },
+    ],
   },
   boss: {
     id: "boss",
@@ -251,6 +292,10 @@ export const ARCHETYPES: Readonly<Record<ArchetypeId, EnemyArchetype>> = {
       clothesBottom: "#190018",
       accent: "#ffcf4d",
     }),
+    appearances: [
+      { hairStyle: "sideSweep", outfitStyle: "royal", faceStyle: "masked", accessory: "crown" },
+      { hairStyle: "helmet", outfitStyle: "royal", faceStyle: "focused", accessory: "crown" },
+    ],
   },
   bomber: {
     id: "bomber",
@@ -273,5 +318,9 @@ export const ARCHETYPES: Readonly<Record<ArchetypeId, EnemyArchetype>> = {
       clothesBottom: "#331000",
       accent: "#ffff00",
     }),
+    appearances: [
+      { hairStyle: "spiky", outfitStyle: "bombVest", faceStyle: "focused", accessory: "fuse" },
+      { hairStyle: "bob", outfitStyle: "bombVest", faceStyle: "visor", accessory: "goggles" },
+    ],
   },
 };

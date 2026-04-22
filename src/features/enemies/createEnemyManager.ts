@@ -1,7 +1,11 @@
 import { type Ray, type Scene, Vector3 } from "@babylonjs/core";
 import type { DamageResult } from "@/shared/contracts/damage";
 import type { Disposable } from "@/shared/contracts/Disposable";
-import { type ChibiPalette, DEFAULT_PALETTES } from "./createChibiCharacter";
+import {
+  type ChibiAppearance,
+  type ChibiPalette,
+  DEFAULT_PALETTES,
+} from "./createChibiCharacter";
 import {
   createEnemy,
   type EnemyAttackEvent,
@@ -19,6 +23,7 @@ export interface EnemySpawn {
   readonly facingY: number;
   readonly spec?: EnemySpec;
   readonly palette?: ChibiPalette;
+  readonly appearance?: ChibiAppearance;
   readonly scale?: number;
 }
 
@@ -60,6 +65,7 @@ export function createEnemyManager(
       scene,
       id,
       palette,
+      appearance: spawn.appearance,
       position: spawn.position,
       facingY: spawn.facingY,
       spec: spawn.spec ?? defaultSpec,
