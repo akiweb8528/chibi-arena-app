@@ -16,6 +16,8 @@ export function createEngine(canvas: HTMLCanvasElement): EngineHandle {
 
   const onResize = () => engine.resize();
   window.addEventListener("resize", onResize);
+  window.addEventListener("orientationchange", onResize);
+  window.visualViewport?.addEventListener("resize", onResize);
 
   let loopAttached = false;
 
@@ -29,6 +31,8 @@ export function createEngine(canvas: HTMLCanvasElement): EngineHandle {
     dispose() {
       engine.stopRenderLoop();
       window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+      window.visualViewport?.removeEventListener("resize", onResize);
       engine.dispose();
     },
   };

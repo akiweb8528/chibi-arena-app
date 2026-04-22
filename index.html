@@ -2,7 +2,10 @@
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
+    />
     <title>Babylon FPS — Chibi Arena</title>
 
     <!-- 初期表示のチラつき防止用の最小CSS -->
@@ -20,7 +23,7 @@
         position: fixed;
         inset: 0;
         width: 100vw;
-        height: 100vh;
+        height: 100dvh;
         display: block;
       }
     </style>
@@ -42,12 +45,20 @@
       <div id="damage-overlay"></div>
     </div>
 
+    <div id="mobile-controls" aria-hidden="true">
+      <div id="move-pad"><div id="move-knob"></div></div>
+      <button id="fire-button" type="button">FIRE</button>
+    </div>
+
     <div id="overlay" role="button" tabindex="0">
       <div class="overlay-card">
         <h1>Chibi Arena</h1>
-        <p class="lead">クリックして開始</p>
-        <p class="hint">
+        <p class="lead">クリック / タップして開始</p>
+        <p class="hint desktop-hint">
           WASD / 矢印: 移動 &middot; マウス: 視点 &middot; 左クリック: 射撃 &middot; ESC: 解除
+        </p>
+        <p class="hint touch-hint">
+          左パッド: 移動 &middot; 画面右ドラッグ: 視点 &middot; FIRE: 射撃
         </p>
       </div>
     </div>
