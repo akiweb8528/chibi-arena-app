@@ -31,16 +31,6 @@ export function createCombatSystem(opts: CombatOptions): Disposable {
     events,
   } = opts;
 
-  let touchTap:
-    | {
-        pointerId: number;
-        startX: number;
-        startY: number;
-        startMs: number;
-        moved: boolean;
-      }
-    | null = null;
-
   const tryFire = (): void => {
     if (!isFiringAllowed()) return;
 
@@ -69,53 +59,16 @@ export function createCombatSystem(opts: CombatOptions): Disposable {
     tryFire();
   };
 
-  const handleCanvasPointerDown = (e: PointerEvent): void => {
-    if (e.button !== 0 || e.pointerType === "mouse") return;
-    const rect = canvas.getBoundingClientRect();
-    if (e.clientX < rect.left + rect.width * 0.42) return;
-
-    touchTap = {
-      pointerId: e.pointerId,
-      startX: e.clientX,
-      startY: e.clientY,
-      startMs: performance.now(),
-      moved: false,
-    };
-  };
-
-  const handleCanvasPointerMove = (e: PointerEvent): void => {
-    if (e.pointerId !== touchTap?.pointerId) return;
-    const movement = Math.hypot(e.clientX - touchTap.startX, e.clientY - touchTap.startY);
-    if (movement > 14) touchTap.moved = true;
-  };
-
-  const handleCanvasPointerUp = (e: PointerEvent): void => {
-    if (e.pointerId !== touchTap?.pointerId) return;
-    const elapsedMs = performance.now() - touchTap.startMs;
-    const shouldFire = !touchTap.moved && elapsedMs <= 280;
-    touchTap = null;
-    if (shouldFire) tryFire();
-  };
-
-  const handleCanvasPointerCancel = (e: PointerEvent): void => {
-    if (e.pointerId === touchTap?.pointerId) touchTap = null;
-  };
-
   window.addEventListener("pointerdown", handlePointerDown);
-  canvas.addEventListener("pointerdown", handleCanvasPointerDown);
-  canvas.addEventListener("pointermove", handleCanvasPointerMove);
-  canvas.addEventListener("pointerup", handleCanvasPointerUp);
-  canvas.addEventListener("pointercancel", handleCanvasPointerCancel);
   fireButton?.addEventListener("pointerdown", handleFireButtonPointerDown);
 
   return {
     dispose() {
       window.removeEventListener("pointerdown", handlePointerDown);
-      canvas.removeEventListener("pointerdown", handleCanvasPointerDown);
-      canvas.removeEventListener("pointermove", handleCanvasPointerMove);
-      canvas.removeEventListener("pointerup", handleCanvasPointerUp);
-      canvas.removeEventListener("pointercancel", handleCanvasPointerCancel);
-      fireButton?.removeEventListener("pointerdown", handleFireButtonPointerDown);
+      fireButton?.removeEventListener(
+        "pointerdown",
+        handleFireButtonPointerDown,
+      );
     },
   };
 }
