@@ -53,10 +53,12 @@ export function createHud(elements: HudElements): Hud {
   let damageTimer: number | undefined;
   let endClickCb: (() => void) | null = null;
 
-  const handleEndClick = () => {
+  const handleEndPointerUp = (e: PointerEvent) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
     endClickCb?.();
   };
-  elements.endOverlay.addEventListener("click", handleEndClick);
+  elements.endOverlay.addEventListener("pointerup", handleEndPointerUp);
 
   return {
     setHp(current, max) {
@@ -102,7 +104,7 @@ export function createHud(elements: HudElements): Hud {
       endClickCb = cb;
     },
     dispose() {
-      elements.endOverlay.removeEventListener("click", handleEndClick);
+      elements.endOverlay.removeEventListener("pointerup", handleEndPointerUp);
       if (hitTimer !== undefined) window.clearTimeout(hitTimer);
       if (damageTimer !== undefined) window.clearTimeout(damageTimer);
       endClickCb = null;
