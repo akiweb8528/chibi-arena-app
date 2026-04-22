@@ -170,9 +170,8 @@ export function createGameApp(opts: GameAppOptions): GameApp {
         "win",
         "GAME CLEAR",
         `全${STAGES.length}ステージ制覇 — ${current.name} を突破`,
-        "クリック / R で最初のステージへ",
+        "R で最初のステージへ",
       );
-      hud.onEndClick(() => restartFromBeginning());
       return;
     }
     const next = STAGES[nextIndex]!;
@@ -199,9 +198,8 @@ export function createGameApp(opts: GameAppOptions): GameApp {
       "lose",
       "DEFEAT",
       `Stage ${current.number} — ${current.name}`,
-      "クリック / R でリトライ",
+      "R でリトライ",
     );
-    hud.onEndClick(() => retryCurrentStage());
   };
 
   const advanceToNextStage = () => {
